@@ -1,0 +1,1556 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>内容直播参谋 Skill</title>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f3f6f8;
+      --surface: #ffffff;
+      --soft: #f7fafc;
+      --line: #d8e1e9;
+      --ink: #14202b;
+      --muted: #607083;
+      --blue: #245fdb;
+      --green: #0d856b;
+      --orange: #aa5c06;
+      --red: #bd3044;
+      --cyan: #087990;
+      --blue-soft: #eef4ff;
+      --green-soft: #effaf6;
+      --orange-soft: #fff6e8;
+      --red-soft: #fff1f4;
+      --shadow: 0 16px 42px rgba(18, 31, 46, 0.09);
+      --radius: 8px;
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    button, input, textarea, select { font: inherit; }
+    button { user-select: none; }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      background: #172231;
+      color: #f8fbff;
+      padding: 18px 16px;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      gap: 18px;
+      min-height: 100vh;
+      position: sticky;
+      top: 0;
+    }
+
+    .brand {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+    }
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: #f8fbff;
+      color: #172231;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    .brand span {
+      display: block;
+      color: #adbac9;
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .side-section {
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      padding-top: 14px;
+    }
+
+    .side-title {
+      color: #adbac9;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    .nav {
+      display: grid;
+      gap: 6px;
+    }
+
+    .nav button {
+      min-height: 38px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #dce6f1;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 10px;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .nav button.active,
+    .nav button:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+    }
+
+    .side-foot {
+      color: #adbac9;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .main {
+      padding: 18px;
+      min-width: 0;
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .topbar,
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .topbar {
+      padding: 14px 16px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .topbar h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .topbar p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel { min-width: 0; }
+
+    .panel-header {
+      min-height: 56px;
+      border-bottom: 1px solid var(--line);
+      padding: 13px 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    .panel-body { padding: 15px; }
+
+    .top-actions,
+    .row-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      min-height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--ink);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 8px 11px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn:hover { border-color: #aeb9c6; }
+    .btn.primary { background: var(--blue); border-color: var(--blue); color: #ffffff; }
+    .btn.success { background: var(--green); border-color: var(--green); color: #ffffff; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    [data-lucide] {
+      width: 17px;
+      height: 17px;
+      flex: 0 0 auto;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+      color: var(--ink);
+      padding: 9px 10px;
+      outline: 0;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 84px;
+      line-height: 1.5;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(36, 95, 219, 0.12);
+    }
+
+    .field-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .quick-actions {
+      display: grid;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .quick-actions .btn { width: 100%; }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--soft);
+      padding: 10px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    details .field-grid {
+      margin-top: 12px;
+    }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .stat,
+    .card,
+    .timeline-item,
+    .risk-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+      padding: 12px;
+      min-width: 0;
+    }
+
+    .stat {
+      min-height: 76px;
+      background: var(--soft);
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 21px;
+      line-height: 1.1;
+    }
+
+    .cards,
+    .qa-grid,
+    .risk-grid,
+    .replay-grid,
+    .export-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .hotspot-card {
+      cursor: pointer;
+    }
+
+    .hotspot-card.selected {
+      border-color: rgba(13, 133, 107, 0.7);
+      background: var(--green-soft);
+    }
+
+    .card h3,
+    .timeline-item h3,
+    .risk-card h3 {
+      margin: 0 0 7px;
+      font-size: 15px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    .card p,
+    .timeline-item p,
+    .risk-card p,
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .card p,
+    .timeline-item p,
+    .risk-card p { margin: 0; }
+
+    .tag-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 9px;
+    }
+
+    .tag {
+      min-height: 22px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #ffffff;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1;
+      padding: 4px 8px;
+      display: inline-flex;
+      align-items: center;
+      white-space: nowrap;
+    }
+
+    .tag.green { border-color: rgba(13, 133, 107, 0.35); background: var(--green-soft); color: var(--green); }
+    .tag.orange { border-color: rgba(170, 92, 6, 0.35); background: var(--orange-soft); color: var(--orange); }
+    .tag.red { border-color: rgba(189, 48, 68, 0.35); background: var(--red-soft); color: var(--red); }
+
+    .timeline {
+      display: grid;
+      gap: 10px;
+    }
+
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 98px minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+
+    .time {
+      color: var(--cyan);
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .script-line {
+      margin-top: 8px;
+      border-left: 3px solid var(--blue);
+      padding-left: 10px;
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.72;
+      white-space: pre-wrap;
+    }
+
+    .prompt-stage {
+      min-height: 360px;
+      border-radius: 8px;
+      background: #111923;
+      color: #f8fbff;
+      padding: 28px;
+      display: grid;
+      align-content: center;
+      gap: 18px;
+    }
+
+    .prompt-stage h3 {
+      margin: 0;
+      color: #93c5fd;
+      font-size: 16px;
+    }
+
+    .prompt-stage p {
+      margin: 0;
+      font-size: var(--prompt-size, 32px);
+      line-height: 1.55;
+      letter-spacing: 0;
+    }
+
+    .prompt-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    input[type="range"] {
+      width: 150px;
+      padding: 0;
+    }
+
+    .range-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .risk-card.high { background: var(--red-soft); border-color: rgba(189, 48, 68, 0.45); }
+    .risk-card.medium { background: var(--orange-soft); border-color: rgba(170, 92, 6, 0.45); }
+    .risk-card.low { background: var(--green-soft); border-color: rgba(13, 133, 107, 0.35); }
+
+    .export-box {
+      min-height: 260px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+      padding: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      overflow: auto;
+    }
+
+    .empty {
+      border: 1px dashed #b9c5d0;
+      border-radius: 8px;
+      background: #fbfdff;
+      color: var(--muted);
+      padding: 26px;
+      text-align: center;
+      line-height: 1.55;
+    }
+
+    .empty strong {
+      display: block;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 20;
+      max-width: min(360px, calc(100vw - 36px));
+      border: 1px solid rgba(13, 133, 107, 0.3);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+      color: var(--ink);
+      padding: 12px 14px;
+      display: none;
+      font-size: 13px;
+    }
+
+    .toast.show { display: block; }
+
+    .ai-modal {
+      position: fixed;
+      right: 18px;
+      bottom: 76px;
+      z-index: 25;
+      width: min(420px, calc(100vw - 36px));
+      border: 1px solid rgba(36, 95, 219, 0.22);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+      padding: 14px;
+      display: none;
+      gap: 12px;
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      align-items: start;
+    }
+
+    .ai-modal.show {
+      display: grid;
+    }
+
+    .ai-spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid #dbe6f3;
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin-top: 2px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .ai-modal h3 {
+      margin: 0 0 4px;
+      font-size: 14px;
+      letter-spacing: 0;
+    }
+
+    .ai-modal p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .ai-modal .btn {
+      min-height: 30px;
+      padding: 5px 8px;
+    }
+
+    @media (max-width: 1180px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { min-height: auto; position: static; }
+      .workspace { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      .main { padding: 12px; }
+      .topbar, .panel-header { display: grid; grid-template-columns: 1fr; align-items: stretch; }
+      .top-actions, .row-actions { justify-content: flex-start; }
+      .two-col, .stats, .cards, .qa-grid, .risk-grid, .replay-grid, .export-grid { grid-template-columns: 1fr; }
+      .timeline-item { grid-template-columns: 1fr; }
+      .prompt-stage { min-height: 280px; padding: 20px; }
+      .prompt-stage p { font-size: min(var(--prompt-size, 30px), 30px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">讲</div>
+        <div>
+          <strong>内容直播参谋</strong>
+          <span>Knowledge Live Skill</span>
+        </div>
+      </div>
+
+      <section class="side-section">
+        <div class="side-title">工作流</div>
+        <nav class="nav" aria-label="页面导航">
+          <button class="active" type="button" data-view="hotspots"><i data-lucide="flame"></i> 热点选题</button>
+          <button type="button" data-view="script"><i data-lucide="scroll-text"></i> 完整话术</button>
+          <button type="button" data-view="prompt"><i data-lucide="captions"></i> 主播提词</button>
+          <button type="button" data-view="review"><i data-lucide="chart-no-axes-combined"></i> 复盘审校</button>
+          <button type="button" data-view="export"><i data-lucide="download"></i> 导出交付</button>
+        </nav>
+      </section>
+
+      <section class="side-section">
+        <div class="side-title">本地状态</div>
+        <div class="tag-row">
+          <span class="tag orange" id="aiStatus">MiniMax 检查中</span>
+          <span class="tag" id="hotspotState">0 热点</span>
+          <span class="tag" id="scriptState">0 段话术</span>
+        </div>
+      </section>
+
+      <section class="side-section">
+        <div class="side-title">定位</div>
+        <div class="side-foot">面向历史、军事史、国际关系、文化、科普、读书会等内容型直播。军事内容默认只讨论公开资料、历史叙事和战略文化。</div>
+      </section>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1>内容型直播策划工作台</h1>
+          <p>少填资料，先拿热点，再一键生成完整直播话术、提词稿和审校清单。</p>
+        </div>
+        <div class="top-actions">
+          <button class="btn" type="button" id="loadDemo"><i data-lucide="database"></i> 样例</button>
+          <button class="btn" type="button" id="saveDraft"><i data-lucide="save"></i> 保存</button>
+          <button class="btn primary" type="button" id="runAll"><i data-lucide="wand-sparkles"></i> 一键完整稿</button>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <section class="panel">
+          <div class="panel-header">
+            <h2>快速开始</h2>
+            <span class="tag green">只填 1-4 项即可</span>
+          </div>
+          <div class="panel-body">
+            <div class="field-grid">
+              <div class="two-col">
+                <label>
+                  内容领域
+                  <select id="domain">
+                    <option>历史</option>
+                    <option selected>军事史</option>
+                    <option>国际关系</option>
+                    <option>文化</option>
+                    <option>科普</option>
+                    <option>商业观察</option>
+                    <option>读书会</option>
+                  </select>
+                </label>
+                <label>
+                  直播时长
+                  <select id="duration">
+                    <option value="45">45 分钟</option>
+                    <option value="60" selected>60 分钟</option>
+                    <option value="90">90 分钟</option>
+                    <option value="120">120 分钟</option>
+                  </select>
+                </label>
+              </div>
+              <div class="two-col">
+                <label>
+                  主播风格
+                  <select id="hostStyle">
+                    <option selected>故事讲述型</option>
+                    <option>资料考据型</option>
+                    <option>热点评论型</option>
+                    <option>问答互动型</option>
+                    <option>课堂讲解型</option>
+                  </select>
+                </label>
+                <label>
+                  内容目标
+                  <select id="contentGoal">
+                    <option selected>涨粉留存</option>
+                    <option>知识科普</option>
+                    <option>热点解读</option>
+                    <option>系列栏目</option>
+                    <option>社群互动</option>
+                  </select>
+                </label>
+              </div>
+              <label>
+                想聊什么，可不填
+                <textarea id="topicSeed" placeholder="例如：淝水之战为什么不只是以少胜多？如果不填，先点推荐热点。"></textarea>
+              </label>
+
+              <details>
+                <summary>高级资料，可选</summary>
+                <div class="field-grid">
+                  <label>
+                    账号/栏目名
+                    <input id="accountName" value="冷知识讲堂" />
+                  </label>
+                  <div class="two-col">
+                    <label>
+                      平台
+                      <select id="platform">
+                        <option>视频号</option>
+                        <option>抖音</option>
+                        <option>快手</option>
+                        <option>B 站</option>
+                        <option>小红书</option>
+                      </select>
+                    </label>
+                    <label>
+                      内容深度
+                      <select id="depth">
+                        <option>入门</option>
+                        <option selected>进阶</option>
+                        <option>专业</option>
+                      </select>
+                    </label>
+                  </div>
+                  <label>
+                    目标观众
+                    <input id="audience" value="历史爱好者、军事史入门用户、喜欢听故事但希望有资料依据的观众" />
+                  </label>
+                  <label>
+                    账号定位
+                    <textarea id="positioning">用公开资料讲清历史事件、战略选择和人物决策，不做阴谋论和情绪煽动</textarea>
+                  </label>
+                  <label>
+                    可用资料/素材
+                    <textarea id="materials">《资治通鉴》中关于前秦南下和东晋应对的记载
+谢安、谢玄、苻坚等人物决策线
+“风声鹤唳”“草木皆兵”等典故的后世传播
+公开历史地图和时间线，不涉及现实军事行动或操作建议</textarea>
+                  </label>
+                  <label>
+                    观点边界
+                    <textarea id="boundaries">只做历史和公开资料层面的分析；不输出现实军事行动建议；不渲染仇恨；有争议处标明“史料说法之一”。</textarea>
+                  </label>
+                  <label>
+                    互动方式
+                    <textarea id="interactionPlan">开场投票；中段设置角色代入问题；结尾收集下一场想听的事件或人物。</textarea>
+                  </label>
+                  <label>
+                    播后评论/转写
+                    <textarea id="transcript">观众对“前秦为什么会误判”讨论较多；有人追问史料依据；第 25 分钟讲人物决策时评论明显增加；结尾有人要求下一场讲赤壁之战。</textarea>
+                  </label>
+                  <div class="two-col">
+                    <label>场观 <input id="viewers" type="number" value="2860" min="0" /></label>
+                    <label>平均停留秒数 <input id="avgStay" type="number" value="96" min="0" /></label>
+                  </div>
+                  <div class="two-col">
+                    <label>评论数 <input id="comments" type="number" value="188" min="0" /></label>
+                    <label>新增关注 <input id="follows" type="number" value="64" min="0" /></label>
+                  </div>
+                </div>
+              </details>
+            </div>
+
+            <div class="quick-actions">
+              <button class="btn primary" type="button" id="recommendHotspots"><i data-lucide="flame"></i> 推荐热点</button>
+              <button class="btn success" type="button" id="makeScript"><i data-lucide="scroll-text"></i> 生成完整直播稿</button>
+              <button class="btn" type="button" id="makeReview"><i data-lucide="shield-check"></i> 复盘与审校</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2 id="viewTitle">热点选题</h2>
+            <div class="row-actions">
+              <button class="btn" type="button" id="copyCurrent"><i data-lucide="copy"></i> 复制</button>
+              <button class="btn" type="button" id="downloadMd"><i data-lucide="file-down"></i> MD</button>
+              <button class="btn" type="button" id="downloadJson"><i data-lucide="braces"></i> JSON</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div id="hotspots" class="view active">
+              <div class="empty"><strong>先推荐热点</strong>选一个领域，点击“推荐热点”，系统会给出可直接开播的选题入口。</div>
+            </div>
+            <div id="script" class="view">
+              <div class="empty"><strong>直播稿待生成</strong>选择热点或输入主题后，生成完整口播稿。</div>
+            </div>
+            <div id="prompt" class="view">
+              <div class="empty"><strong>提词器待生成</strong>生成完整直播稿后进入主播提词。</div>
+            </div>
+            <div id="review" class="view">
+              <div class="empty"><strong>复盘审校待生成</strong>生成复盘建议和事实边界审校。</div>
+            </div>
+            <div id="export" class="view">
+              <div class="export-grid">
+                <div>
+                  <div class="row-actions" style="justify-content:flex-start;margin-bottom:10px;">
+                    <button class="btn primary" type="button" id="copyAll"><i data-lucide="copy"></i> 复制全部</button>
+                    <button class="btn" type="button" id="downloadAll"><i data-lucide="file-down"></i> 下载方案</button>
+                  </div>
+                  <div class="export-box" id="exportText"></div>
+                </div>
+                <div class="cards">
+                  <article class="card">
+                    <h3>交付内容</h3>
+                    <p>热点选题、完整口播稿、互动问答、提词器、复盘建议、事实核查和边界审校。</p>
+                    <div class="tag-row"><span class="tag green">可试播</span><span class="tag">MiniMax 生成</span></div>
+                  </article>
+                  <article class="card">
+                    <h3>使用方式</h3>
+                    <p>先推荐热点，再点热点卡片生成直播稿。高级资料只是增强项，不再是必填项。</p>
+                    <div class="tag-row"><span class="tag">轻表单</span><span class="tag">可导出</span></div>
+                  </article>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+  <div class="ai-modal" id="aiModal" role="status" aria-live="polite">
+    <div class="ai-spinner" aria-hidden="true"></div>
+    <div>
+      <h3 id="aiModalTitle">正在调用 MiniMax</h3>
+      <p id="aiModalBody">已先生成基础版，MiniMax 增强结果完成后会自动更新。</p>
+    </div>
+    <button class="btn" type="button" id="aiModalClose">继续操作</button>
+  </div>
+
+  <script>
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+    const storageKey = "knowledge-live-skill-v7";
+
+    const viewNames = {
+      hotspots: "热点选题",
+      script: "完整话术",
+      prompt: "主播提词",
+      review: "复盘审校",
+      export: "导出交付"
+    };
+
+    const fields = [
+      "accountName", "platform", "domain", "positioning", "audience", "contentGoal", "duration",
+      "hostStyle", "depth", "topicSeed", "materials", "boundaries", "interactionPlan",
+      "transcript", "viewers", "avgStay", "comments", "follows"
+    ];
+
+    const app = {
+      aiReady: false,
+      selectedHotspotIndex: 0,
+      promptIndex: 0,
+      promptSize: 32,
+      hotspots: [],
+      scriptMeta: {},
+      script: [],
+      qna: [],
+      transitions: [],
+      openings: [],
+      closings: [],
+      factChecklist: [],
+      replay: [],
+      compliance: [],
+      aiPendingCount: 0,
+      hotspotRequestId: 0,
+      scriptRequestId: 0,
+      reviewRequestId: 0,
+      updatedAt: ""
+    };
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function data() {
+      return Object.fromEntries(fields.map((id) => [id, $(`#${id}`).value.trim()]));
+    }
+
+    function refreshIcons() {
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    function tag(label, tone = "") {
+      return `<span class="tag ${tone}">${escapeHtml(label)}</span>`;
+    }
+
+    function stat(label, value) {
+      return `<div class="stat"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`;
+    }
+
+    function showToast(message) {
+      const toast = $("#toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2200);
+    }
+
+    function setAIStatus(text, tone = "") {
+      $("#aiStatus").textContent = text;
+      $("#aiStatus").className = `tag ${tone}`;
+    }
+
+    function setBusy(isBusy, message = "MiniMax 生成中") {
+      if (isBusy) setAIStatus(message, "orange");
+      else setAIStatus(app.aiReady ? "MiniMax 已连接" : "本地规则模式", app.aiReady ? "green" : "orange");
+    }
+
+    function aiWaitCopy(mode, timeoutMs) {
+      const seconds = Math.ceil(timeoutMs / 1000);
+      const copy = {
+        hotspots: ["正在推荐热点", `已先生成基础热点，MiniMax 正在增强推荐。通常需要十几秒，最久约 ${seconds} 秒；期间你可以继续浏览或直接生成直播稿。`],
+        script: ["正在生成完整话术", `已先生成基础直播稿，MiniMax 正在补充更完整的口播、互动和核查项。预计 ${seconds} 秒内完成，完成后会自动替换当前稿件。`],
+        replay: ["正在生成复盘建议", `基础复盘已先展示，MiniMax 正在结合数据和评论补充更细的下一场建议。预计 ${seconds} 秒内完成。`],
+        compliance: ["正在进行边界审校", `基础审校已先展示，MiniMax 正在检查事实来源、争议表达和军事安全边界。预计 ${seconds} 秒内完成。`]
+      };
+      return copy[mode] || ["正在调用 MiniMax", `大模型生成需要等待，预计 ${seconds} 秒内完成。基础结果已先展示，完成后会自动更新。`];
+    }
+
+    function showAIModal(mode, timeoutMs) {
+      app.aiPendingCount += 1;
+      const [title, body] = aiWaitCopy(mode, timeoutMs);
+      $("#aiModalTitle").textContent = title;
+      $("#aiModalBody").textContent = body;
+      $("#aiModal").classList.add("show");
+    }
+
+    function hideAIModal() {
+      app.aiPendingCount = Math.max(0, app.aiPendingCount - 1);
+      if (app.aiPendingCount === 0) {
+        $("#aiModal").classList.remove("show");
+      }
+    }
+
+    function updateBadges() {
+      $("#hotspotState").textContent = `${app.hotspots.length} 热点`;
+      $("#scriptState").textContent = `${app.script.length} 段话术`;
+    }
+
+    function selectedHotspot() {
+      return app.hotspots[app.selectedHotspotIndex] || null;
+    }
+
+    function switchView(view) {
+      $$(".view").forEach((node) => node.classList.toggle("active", node.id === view));
+      $$(".nav button").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
+      $("#viewTitle").textContent = viewNames[view] || "工作台";
+      if (view === "export") renderExport();
+      refreshIcons();
+    }
+
+    async function checkAIHealth() {
+      try {
+        const response = await fetch("/api/health", { cache: "no-store" });
+        const payload = await response.json();
+        app.aiReady = Boolean(payload.configured);
+        setAIStatus(app.aiReady ? "MiniMax 已连接" : "MiniMax 未配置", app.aiReady ? "green" : "orange");
+      } catch {
+        app.aiReady = false;
+        setAIStatus("本地规则模式", "orange");
+      }
+    }
+
+    async function requestAI(mode, retries = 1, timeoutMs = 45000) {
+      let lastError;
+      showAIModal(mode, timeoutMs);
+      for (let attempt = 0; attempt <= retries; attempt += 1) {
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          const response = await fetch("/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            signal: controller.signal,
+            body: JSON.stringify({
+              mode,
+              input: data(),
+              state: {
+                selectedHotspot: selectedHotspot(),
+                hotspots: app.hotspots,
+                script: app.script,
+                qna: app.qna
+              }
+            })
+          });
+          const payload = await response.json();
+          if (!response.ok || !payload.ok) throw new Error(payload.error || "MiniMax 调用失败");
+          app.aiReady = true;
+          hideAIModal();
+          return payload.result || {};
+        } catch (error) {
+          lastError = error;
+          await new Promise((resolve) => setTimeout(resolve, 600));
+        } finally {
+          window.clearTimeout(timer);
+        }
+      }
+      hideAIModal();
+      throw lastError;
+    }
+
+    function saveDraft(silent = false) {
+      localStorage.setItem(storageKey, JSON.stringify({ fields: data(), app, savedAt: new Date().toISOString() }));
+      app.updatedAt = new Date().toISOString();
+      updateBadges();
+      if (!silent) showToast("已保存到当前浏览器");
+    }
+
+    function restoreDraft() {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return false;
+      try {
+        const saved = JSON.parse(raw);
+        Object.entries(saved.fields || {}).forEach(([id, value]) => {
+          if ($(`#${id}`)) $(`#${id}`).value = value;
+        });
+        Object.assign(app, saved.app || {});
+        app.aiPendingCount = 0;
+        app.hotspotRequestId = 0;
+        app.scriptRequestId = 0;
+        app.reviewRequestId = 0;
+        $("#aiModal").classList.remove("show");
+        renderHotspots();
+        renderScript();
+        renderPrompt();
+        renderReview();
+        renderExport();
+        updateBadges();
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function normalizeTags(value, fallback = []) {
+      return Array.isArray(value) ? value.map(String).filter(Boolean).slice(0, 5) : fallback;
+    }
+
+    function localHotspots() {
+      const d = data();
+      const domain = d.domain || "历史";
+      const seed = d.topicSeed || `${d.domain || "内容领域"}里一个适合直播拆解的高互动问题`;
+      const preset = {
+        "军事史": [
+          ["一场战役为什么不能只看兵力数字？", "兵力对比是军事史直播最容易引发讨论的入口，适合反常识开场。", "从史书数字、实际可战兵力、组织度和士气四层拆解。", "军事史中的兵力数字迷思"],
+          ["名将的神话是怎么被写出来的？", "人物类内容天然有流量，也容易做系列。", "对比史料记录、后世文学和大众印象，讲名将形象如何形成。", "军事史名将形象与史料差异"],
+          ["军队为什么会突然崩溃？", "“崩盘瞬间”有强悬念，适合讲士气、指挥链和组织结构。", "从谣言、指挥失灵、补给压力和共同认同拆解。", "古代军队士气崩溃的真正原因"],
+          ["被误读的一次胜利：赢了战场却输了后续", "战役后续常被忽略，能做出差异化。", "从战后政治、组织消耗和叙事包装讲胜利的代价。", "战役胜利之后发生了什么"]
+        ],
+        "历史": [
+          ["历史上的今天，真正值得讲的不是事件，而是选择", "日更栏目友好，容易形成固定直播心智。", "用一个日期切入人物处境，再拆选择和代价。", "历史上的今天：一个关键选择"],
+          ["一个成语背后的真实历史，可能和你想的不一样", "成语和典故认知门槛低，互动强。", "先讲大众印象，再回到史料和后世传播。", "被成语简化的历史真相"],
+          ["为什么好人不一定有好结局？", "人物命运类话题有情绪和讨论度。", "从制度、权力结构和个人选择解释人物结局。", "历史人物命运反转"]
+        ],
+        "国际关系": [
+          ["一个国家为什么会误判另一个国家？", "误判是国际关系长线高互动问题。", "从信息差、国内政治、联盟承诺和历史记忆拆解。", "国际关系中的战略误判"],
+          ["小国在大国之间怎么做选择？", "适合做案例型直播，也容易引发评论。", "用地理位置、经济依赖、安全承诺和舆论压力拆解。", "小国外交选择困境"],
+          ["热点冲突里，哪些信息最容易误导观众？", "适合做事实核查和信息素养内容。", "讲消息源、立场、时间线和地图叙事。", "国际热点的信息辨别"]
+        ],
+        "文化": [
+          ["一个传统习俗为什么能流传这么久？", "文化内容温和耐播，适合知识型账号。", "从生活需求、仪式感和共同记忆拆解。", "传统习俗的生命力"],
+          ["同一个故事，为什么不同地方讲法不一样？", "适合地域文化和民间叙事。", "比较版本差异、传播路径和地方身份。", "民间故事的地方版本"]
+        ],
+        "科普": [
+          ["一个常识为什么经常被误解？", "反常识科普适合开场留人。", "先给错误直觉，再用实验、类比和边界条件纠偏。", "被误解的科学常识"],
+          ["如果只记住一个判断方法，应该是什么？", "方法型科普容易收藏和转发。", "讲概念、误区、判断步骤和生活案例。", "普通人可用的科学判断方法"]
+        ],
+        "商业观察": [
+          ["一个行业为什么突然变热？", "商业热点适合做趋势观察。", "从需求、供给、渠道、资本和政策五层拆解。", "行业突然变热的底层原因"],
+          ["爆款产品为什么不是偶然？", "适合拆品牌和产品案例。", "讲用户场景、传播机制和供给链路。", "爆款产品背后的结构"]
+        ],
+        "读书会": [
+          ["一本书最值得直播讲的不是金句，而是问题", "读书会需要从摘要转向讨论。", "用核心问题、作者处境和现实连接组织直播。", "一本书的核心问题"],
+          ["为什么同一本书，不同年龄读感完全不同？", "适合互动和社群讨论。", "从人生阶段、经验结构和关注点变化展开。", "重读经典的不同感受"]
+        ]
+      };
+      const rows = preset[domain] || preset["历史"];
+      if (!d.topicSeed) {
+        return rows.map(([title, why, angle, itemSeed], index) => ({
+          title,
+          why,
+          angle,
+          seed: itemSeed,
+          tags: index === 0 ? ["推荐", "长线可用"] : ["可开播"],
+          freshness: index === 0 ? "本周可用" : "长线可用",
+          risk: domain.includes("军事") ? "限定公开资料和历史叙事，不输出现实行动建议。" : "争议处标注资料来源。"
+        }));
+      }
+      return [
+        {
+          title: `${domain}里最容易被误读的一个问题`,
+          why: "反常识切入，适合开场制造停留。",
+          angle: `围绕“${seed.slice(0, 28)}”拆成事实、误读和真正原因三层。`,
+          seed,
+          tags: ["反常识", "长线可用"],
+          freshness: "长线可用",
+          risk: "争议处标注资料来源。"
+        },
+        {
+          title: "历史上的今天：用一个日期讲清一场选择",
+          why: "适合每日直播，容易形成栏目化。",
+          angle: "从日期进入人物处境，再讲决策代价。",
+          seed: `${domain}中的关键日期和人物选择`,
+          tags: ["日更栏目", "资料入口"],
+          freshness: "今日可用",
+          risk: "不要编造日期对应事件。"
+        },
+        {
+          title: "如果你在现场，会怎么选？",
+          why: "评论互动强，适合知识型直播破冷场。",
+          angle: "给观众两个或三个历史选项，再回到史料结果。",
+          seed: `${domain}事件中的角色代入选择题`,
+          tags: ["强互动", "投票"],
+          freshness: "本周可用",
+          risk: "推演限定在历史情境。"
+        }
+      ];
+    }
+
+    async function recommendHotspots() {
+      const requestId = app.hotspotRequestId + 1;
+      app.hotspotRequestId = requestId;
+      setBusy(true, "MiniMax 推荐热点");
+      app.hotspots = localHotspots();
+      app.selectedHotspotIndex = 0;
+      renderHotspots();
+      saveDraft(true);
+      switchView("hotspots");
+      showToast("已先生成基础热点，MiniMax 正在增强");
+      try {
+        const result = await requestAI("hotspots", 0, 18000);
+        if (requestId !== app.hotspotRequestId) return;
+        if (!Array.isArray(result.hotspots) || !result.hotspots.length) throw new Error("未返回热点");
+        app.hotspots = result.hotspots.slice(0, 8).map((item, index) => ({
+          title: String(item.title || `热点选题 ${index + 1}`),
+          why: String(item.why || "适合当前领域直播。"),
+          angle: String(item.angle || "从问题切入，结合资料和互动展开。"),
+          seed: String(item.seed || item.title || ""),
+          tags: normalizeTags(item.tags, ["内容热点"]),
+          freshness: String(item.freshness || "长线可用"),
+          risk: String(item.risk || "争议处标注资料来源。")
+        }));
+        app.selectedHotspotIndex = 0;
+        renderHotspots();
+        saveDraft(true);
+        switchView("hotspots");
+        showToast("MiniMax 已更新热点");
+      } catch (error) {
+        if (requestId !== app.hotspotRequestId) return;
+        console.warn(error);
+        app.aiReady = false;
+        showToast("MiniMax 暂不可用，保留基础热点");
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    function renderHotspots() {
+      if (!app.hotspots.length) {
+        $("#hotspots").innerHTML = `<div class="empty"><strong>先推荐热点</strong>选一个领域，点击“推荐热点”，系统会给出可直接开播的选题入口。</div>`;
+        return;
+      }
+      const selected = selectedHotspot() || app.hotspots[0];
+      $("#hotspots").innerHTML = `
+        <div class="stats">
+          ${stat("热点入口", `${app.hotspots.length} 个`)}
+          ${stat("已选择", selected.freshness || "可用")}
+          ${stat("操作", "点卡生成")}
+          ${stat("下一步", "完整话术")}
+        </div>
+        <div class="cards">
+          ${app.hotspots.map((item, index) => `
+            <article class="card hotspot-card ${index === app.selectedHotspotIndex ? "selected" : ""}" data-index="${index}">
+              <h3>${escapeHtml(item.title)}</h3>
+              <p>${escapeHtml(item.why)}</p>
+              <p style="margin-top:8px;">${escapeHtml(item.angle)}</p>
+              <div class="tag-row">
+                ${tag(item.freshness || "长线可用", index === app.selectedHotspotIndex ? "green" : "")}
+                ${item.tags.map((label) => tag(label)).join("")}
+              </div>
+            </article>
+          `).join("")}
+        </div>
+      `;
+      $$(".hotspot-card").forEach((card) => {
+        card.addEventListener("click", async () => {
+          app.selectedHotspotIndex = Number(card.dataset.index);
+          app.hotspotRequestId += 1;
+          renderHotspots();
+          await generateScript();
+        });
+      });
+      updateBadges();
+    }
+
+    function localScript() {
+      const d = data();
+      const hotspot = selectedHotspot();
+      const topic = d.topicSeed || hotspot?.seed || hotspot?.title || `${d.domain}内容选题`;
+      const minutes = Number(d.duration) || 60;
+      const cuts = [0, 5, 12, 24, 38, 50, minutes];
+      app.scriptMeta = {
+        title: topic,
+        subtitle: `${d.domain}｜${d.hostStyle}｜${minutes} 分钟`,
+        hook: `今天不把它讲成一个简单故事，而是拆开看：事实是什么、误读在哪里、真正的关键变量是什么。`
+      };
+      app.openings = [
+        `各位晚上好，今天这场我们讲一个很容易被简单化的问题：${topic}。先说边界，我们只基于公开资料和历史叙事讨论，不做现实行动建议。`,
+        `如果你只用一句话概括这件事，可能会错过最关键的部分。今天我们把它拆成三个层次：表面故事、结构原因、人的选择。`
+      ];
+      app.script = [
+        { time: `${cuts[0]}-${cuts[1]} 分钟`, title: "开场钩子", goal: "建立停留理由", key_points: ["反常识问题", "资料边界", "本场路线"], interaction: "让观众在评论区先判断胜负关键。", line: `各位进来的朋友先别急着划走。今天我们不讲爽文式结论，而是讲一个更耐琢磨的问题：${topic}。你可以先在评论区打一个答案，你觉得这件事的关键是人物、组织、士气、信息，还是偶然性？我会按公开资料，把这个问题拆开讲。` },
+        { time: `${cuts[1]}-${cuts[2]} 分钟`, title: "背景铺垫", goal: "补齐基础信息", key_points: ["时间线", "人物", "局势"], interaction: "问观众最熟悉哪个人物。", line: `先把背景摆清楚。很多历史事件被后来讲成一句成语、一个名场面，但当事人身处其中时，看到的是不完整的信息、互相牵制的组织，以及随时变化的局势。我们先记住几个关键词：谁在做决定，手里有什么资源，最害怕什么结果。` },
+        { time: `${cuts[2]}-${cuts[3]} 分钟`, title: "资料依据", goal: "建立可信度", key_points: ["公开资料", "争议标注", "不确定性"], interaction: "邀请观众追问资料来源。", line: `接下来我们看资料。这里最重要的不是背诵原文，而是看资料能证明什么、不能证明什么。涉及争议的地方，我会用“可能解释”来讲，不把一种说法包装成唯一真相。知识直播最怕讲得很满，但证据其实没那么满。` },
+        { time: `${cuts[3]}-${cuts[4]} 分钟`, title: "核心分析", goal: "形成观点", key_points: ["结构原因", "人物决策", "误判"], interaction: "设置二选一或三选一投票。", line: `真正决定走向的，往往不是单个英雄瞬间的选择，而是组织、士气和信息判断叠在一起。一个决策看起来荒唐，放回当时的资源约束里，可能就能理解它为什么发生。我们不急着评判谁聪明谁愚蠢，而是看这套判断链条是怎么一步步形成的。` },
+        { time: `${cuts[4]}-${cuts[5]} 分钟`, title: "互动讨论", goal: "拉起评论", key_points: ["角色代入", "观众选择", "现场回应"], interaction: d.interactionPlan || "请观众选择如果自己在现场会怎么做。", line: `现在我们做一个互动：如果你站在当事人的位置，信息不完整，时间又很紧，你会选择保守、冒进，还是等待更多信息？把你的选择打在评论区。我会挑几条典型回答回应。注意，我们做的是历史情境推演，不延伸到现实行动建议。` },
+        { time: `${cuts[5]}-${cuts[6]} 分钟`, title: "收束与下集", goal: "沉淀观点并引导关注", key_points: ["总结", "观点回收", "下集预告"], interaction: "收集下一场主题。", line: `最后收束一下：这场内容想说明的是，历史不是一个结果倒推出来的简单故事。真正值得看的是，人在不确定局势里怎样判断，组织怎样放大或修正判断，士气又怎样改变结果。想听下一场讲哪个事件或人物，可以直接打在评论区。` }
+      ];
+      app.transitions = ["我们先不急着下结论，先把背景铺开。", "有了背景，再看资料就不容易被单句结论带跑。", "资料讲完，进入真正的核心：为什么会这样。"];
+      app.closings = ["今天先讲到这里，下一场我们继续把这个主题拆到人物和制度层面。"];
+      app.qna = [
+        { q: "资料依据是什么？", a: "优先引用公开资料和常见史料版本，争议处明确说“这是一种解释”。" },
+        { q: "能不能讲更细的战术操作？", a: "不讲现实行动、战术执行、装备操作或敏感细节，只做历史和公开资料讨论。" },
+        { q: "这和今天有什么关系？", a: "可以讨论决策、组织、信息判断等通用经验，不直接映射现实对抗。" }
+      ];
+      app.factChecklist = ["资料出处是否明确", "争议说法是否标注不确定性", "是否避免现实行动建议", "是否避免情绪煽动"];
+    }
+
+    async function generateScript() {
+      const requestId = app.scriptRequestId + 1;
+      app.scriptRequestId = requestId;
+      if (!app.hotspots.length && !$("#topicSeed").value.trim()) {
+        await recommendHotspots();
+      }
+      setBusy(true, "MiniMax 生成完整稿");
+      localScript();
+      renderScript();
+      renderPrompt();
+      saveDraft(true);
+      switchView("script");
+      showToast("已先生成基础直播稿，MiniMax 正在增强");
+      try {
+        const result = await requestAI("script", 0, 50000);
+        if (requestId !== app.scriptRequestId) return;
+        if (!Array.isArray(result.script) || !result.script.length) throw new Error("未返回完整话术");
+        app.scriptMeta = {
+          title: String(result.title || selectedHotspot()?.title || $("#topicSeed").value || "内容直播稿"),
+          subtitle: String(result.subtitle || `${$("#domain").value}｜${$("#duration").value} 分钟`),
+          hook: String(result.hook || "")
+        };
+        app.script = result.script.slice(0, 10).map((item, index) => ({
+          time: String(item.time || `${index * 8}-${(index + 1) * 8} 分钟`),
+          title: String(item.title || `第 ${index + 1} 段`),
+          goal: String(item.goal || "推进内容"),
+          key_points: normalizeTags(item.key_points, []),
+          line: String(item.line || "围绕主题进行完整口播。"),
+          interaction: String(item.interaction || "")
+        }));
+        app.transitions = Array.isArray(result.transitions) ? result.transitions.map(String).slice(0, 8) : [];
+        app.openings = Array.isArray(result.opening_scripts) ? result.opening_scripts.map(String).slice(0, 5) : [];
+        app.closings = Array.isArray(result.closing_scripts) ? result.closing_scripts.map(String).slice(0, 5) : [];
+        app.qna = Array.isArray(result.qna) ? result.qna.slice(0, 8).map((item) => ({ q: String(item.q || "观众问题"), a: String(item.a || "基于资料回答。") })) : [];
+        app.factChecklist = Array.isArray(result.fact_checklist) ? result.fact_checklist.map(String).slice(0, 8) : [];
+        renderScript();
+        renderPrompt();
+        saveDraft(true);
+        switchView("script");
+        showToast("MiniMax 已更新完整直播稿");
+      } catch (error) {
+        if (requestId !== app.scriptRequestId) return;
+        console.warn(error);
+        app.aiReady = false;
+        showToast("MiniMax 暂不可用，保留基础直播稿");
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    function renderScript() {
+      if (!app.script.length) {
+        $("#script").innerHTML = `<div class="empty"><strong>直播稿待生成</strong>选择热点或输入主题后，生成完整口播稿。</div>`;
+        return;
+      }
+      $("#script").innerHTML = `
+        <div class="stats">
+          ${stat("话术段落", `${app.script.length} 段`)}
+          ${stat("问答", `${app.qna.length} 条`)}
+          ${stat("核查项", `${app.factChecklist.length} 条`)}
+          ${stat("状态", "可试播")}
+        </div>
+        <div class="card" style="margin-bottom:12px;">
+          <h3>${escapeHtml(app.scriptMeta.title || "完整直播稿")}</h3>
+          <p>${escapeHtml(app.scriptMeta.subtitle || "")}</p>
+          ${app.scriptMeta.hook ? `<div class="script-line">${escapeHtml(app.scriptMeta.hook)}</div>` : ""}
+        </div>
+        ${app.openings.length ? `<div class="cards" style="margin-bottom:12px;">${app.openings.map((line, i) => `<article class="card"><h3>开场 ${i + 1}</h3><p>${escapeHtml(line)}</p></article>`).join("")}</div>` : ""}
+        <div class="timeline">
+          ${app.script.map((item) => `
+            <article class="timeline-item">
+              <div class="time">${escapeHtml(item.time)}</div>
+              <div>
+                <h3>${escapeHtml(item.title)}</h3>
+                <p>${escapeHtml(item.goal)}</p>
+                <div class="script-line">${escapeHtml(item.line)}</div>
+                ${item.interaction ? `<p style="margin-top:8px;"><strong>互动：</strong>${escapeHtml(item.interaction)}</p>` : ""}
+                ${item.key_points?.length ? `<div class="tag-row">${item.key_points.map((point) => tag(point)).join("")}</div>` : ""}
+              </div>
+            </article>
+          `).join("")}
+        </div>
+        ${app.qna.length ? `<div class="section-title" style="margin:16px 0 10px;font-weight:700;">互动问答</div><div class="qa-grid">${app.qna.map((item) => `<article class="card"><h3>${escapeHtml(item.q)}</h3><p>${escapeHtml(item.a)}</p></article>`).join("")}</div>` : ""}
+      `;
+      updateBadges();
+    }
+
+    function renderPrompt() {
+      if (!app.script.length) {
+        $("#prompt").innerHTML = `<div class="empty"><strong>提词器待生成</strong>生成完整直播稿后进入主播提词。</div>`;
+        return;
+      }
+      const item = app.script[app.promptIndex] || app.script[0];
+      $("#prompt").innerHTML = `
+        <div class="prompt-controls">
+          <div class="row-actions" style="justify-content:flex-start;">
+            <button class="btn" type="button" id="prevPrompt"><i data-lucide="chevron-left"></i> 上一段</button>
+            <button class="btn" type="button" id="nextPrompt">下一段 <i data-lucide="chevron-right"></i></button>
+            <button class="btn" type="button" id="copyPrompt"><i data-lucide="copy"></i> 复制本段</button>
+          </div>
+          <label class="range-wrap">字号 <input id="promptSize" type="range" min="24" max="52" value="${app.promptSize}" /></label>
+        </div>
+        <div class="prompt-stage" style="--prompt-size:${app.promptSize}px;">
+          <h3>${escapeHtml(item.time)}｜${escapeHtml(item.title)}</h3>
+          <p>${escapeHtml(item.line)}</p>
+        </div>
+        <div class="tag-row">${app.script.map((part, index) => tag(`${index + 1}. ${part.title}`, index === app.promptIndex ? "green" : "")).join("")}</div>
+      `;
+      $("#prevPrompt").addEventListener("click", () => { app.promptIndex = Math.max(0, app.promptIndex - 1); renderPrompt(); });
+      $("#nextPrompt").addEventListener("click", () => { app.promptIndex = Math.min(app.script.length - 1, app.promptIndex + 1); renderPrompt(); });
+      $("#copyPrompt").addEventListener("click", () => copyText(item.line));
+      $("#promptSize").addEventListener("input", (event) => {
+        app.promptSize = Number(event.target.value);
+        $(".prompt-stage").style.setProperty("--prompt-size", `${app.promptSize}px`);
+        saveDraft(true);
+      });
+      refreshIcons();
+    }
+
+    async function generateReview() {
+      const requestId = app.reviewRequestId + 1;
+      app.reviewRequestId = requestId;
+      setBusy(true, "MiniMax 复盘审校");
+      try {
+        if (!app.script.length) await generateScript();
+        app.replay = localReplay();
+        app.compliance = localCompliance();
+        renderReview();
+        saveDraft(true);
+        switchView("review");
+        showToast("已先生成基础复盘，MiniMax 正在增强");
+        const [replayResult, complianceResult] = await Promise.all([
+          requestAI("replay", 0, 25000).catch(() => ({})),
+          requestAI("compliance", 0, 25000).catch(() => ({}))
+        ]);
+        if (requestId !== app.reviewRequestId) return;
+        if (Array.isArray(replayResult.replay) && replayResult.replay.length) {
+          app.replay = replayResult.replay.slice(0, 6).map((item) => ({ title: String(item.title || "复盘建议"), body: String(item.body || "优化下一场内容。") }));
+        }
+        if (Array.isArray(complianceResult.compliance) && complianceResult.compliance.length) {
+          app.compliance = complianceResult.compliance.slice(0, 8).map((item) => ({ level: ["low", "medium", "high"].includes(item.level) ? item.level : "medium", title: String(item.title || "边界审校"), body: String(item.body || "请人工复核。"), tags: normalizeTags(item.tags, ["复核"]) }));
+        }
+        renderReview();
+        saveDraft(true);
+        switchView("review");
+        showToast("复盘与审校已更新");
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    function localReplay() {
+      return [
+        { title: "内容高光", body: "优先观察评论集中出现的问题，把下一场主题从评论里选出来。" },
+        { title: "留存优化", body: "开场 3 分钟内给出反常识问题、资料边界和本场路线。" },
+        { title: "互动优化", body: "每 8-10 分钟设置一次选择题，避免长时间单向讲述。" }
+      ];
+    }
+
+    function localCompliance() {
+      return [
+        { level: "medium", title: "事实来源", body: "涉及争议说法时标注资料来源和不确定性。", tags: ["资料依据"] },
+        { level: "medium", title: "军事边界", body: "不输出战术执行、现实行动、装备操作或敏感细节。", tags: ["公开资料"] },
+        { level: "low", title: "表达方式", body: "避免情绪煽动和绝对化判断。", tags: ["表达审校"] }
+      ];
+    }
+
+    function renderReview() {
+      const d = data();
+      const viewers = Number(d.viewers) || 0;
+      const comments = Number(d.comments) || 0;
+      const follows = Number(d.follows) || 0;
+      const avgStay = Number(d.avgStay) || 0;
+      const commentRate = viewers ? ((comments / viewers) * 100).toFixed(1) : "0.0";
+      const followRate = viewers ? ((follows / viewers) * 100).toFixed(1) : "0.0";
+      $("#review").innerHTML = `
+        <div class="stats">
+          ${stat("场观", viewers.toLocaleString("zh-CN"))}
+          ${stat("平均停留", `${avgStay} 秒`)}
+          ${stat("评论率", `${commentRate}%`)}
+          ${stat("关注率", `${followRate}%`)}
+        </div>
+        <div class="replay-grid" style="margin-bottom:12px;">
+          ${app.replay.map((item) => `<article class="card"><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body)}</p></article>`).join("")}
+        </div>
+        <div class="risk-grid">
+          ${app.compliance.map((item) => `<article class="risk-card ${escapeHtml(item.level)}"><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body)}</p><div class="tag-row">${(item.tags || []).map((label) => tag(label, item.level === "high" ? "red" : item.level === "medium" ? "orange" : "green")).join("")}</div></article>`).join("")}
+        </div>
+      `;
+    }
+
+    function buildMarkdown() {
+      const d = data();
+      const hotspot = selectedHotspot();
+      return [
+        `# ${d.accountName || "内容账号"} 直播方案`,
+        "",
+        `领域：${d.domain || "-"}  `,
+        `目标：${d.contentGoal || "-"}  `,
+        `时长：${d.duration || "-"} 分钟  `,
+        `风格：${d.hostStyle || "-"}`,
+        "",
+        "## 热点/主题",
+        hotspot ? `- ${hotspot.title}\n- 入口：${hotspot.why}\n- 角度：${hotspot.angle}\n- 风险：${hotspot.risk}` : (d.topicSeed || "未选择"),
+        "",
+        "## 完整直播稿",
+        app.script.length ? app.script.map((item) => `### ${item.time} ${item.title}\n目标：${item.goal}\n\n${item.line}\n\n互动：${item.interaction || "-"}`).join("\n\n") : "未生成",
+        "",
+        "## 开场话术",
+        app.openings.length ? app.openings.map((line) => `- ${line}`).join("\n") : "未生成",
+        "",
+        "## 互动问答",
+        app.qna.length ? app.qna.map((item) => `- Q：${item.q}\n  A：${item.a}`).join("\n") : "未生成",
+        "",
+        "## 事实核查",
+        app.factChecklist.length ? app.factChecklist.map((item) => `- ${item}`).join("\n") : "未生成",
+        "",
+        "## 复盘审校",
+        app.replay.concat(app.compliance).length ? [...app.replay.map((item) => `- ${item.title}：${item.body}`), ...app.compliance.map((item) => `- ${item.title}：${item.body}`)].join("\n") : "未生成"
+      ].join("\n");
+    }
+
+    function buildJson() {
+      return JSON.stringify({ input: data(), output: app }, null, 2);
+    }
+
+    function renderExport() {
+      $("#exportText").textContent = buildMarkdown();
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("已复制");
+      } catch {
+        const area = document.createElement("textarea");
+        area.value = text;
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand("copy");
+        area.remove();
+        showToast("已复制");
+      }
+    }
+
+    function downloadFile(filename, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      showToast("文件已下载");
+    }
+
+    function currentViewText() {
+      const active = $(".view.active");
+      return active ? active.innerText.trim() || buildMarkdown() : buildMarkdown();
+    }
+
+    async function runAll() {
+      await recommendHotspots();
+      await generateScript();
+      await generateReview();
+      renderExport();
+      switchView("script");
+    }
+
+    function loadDemo() {
+      $("#domain").value = "军事史";
+      $("#duration").value = "60";
+      $("#hostStyle").value = "故事讲述型";
+      $("#contentGoal").value = "涨粉留存";
+      $("#topicSeed").value = "为什么说淝水之战不只是“以少胜多”的故事？它背后真正决定胜负的组织、士气和战略误判是什么？";
+      showToast("样例已载入");
+      saveDraft(true);
+    }
+
+    fields.forEach((id) => {
+      const node = $(`#${id}`);
+      node.addEventListener("input", () => {
+        window.clearTimeout(saveDraft.timer);
+        saveDraft.timer = window.setTimeout(() => saveDraft(true), 600);
+      });
+    });
+
+    $$(".nav button").forEach((button) => button.addEventListener("click", () => switchView(button.dataset.view)));
+    $("#loadDemo").addEventListener("click", loadDemo);
+    $("#saveDraft").addEventListener("click", () => saveDraft(false));
+    $("#recommendHotspots").addEventListener("click", recommendHotspots);
+    $("#makeScript").addEventListener("click", generateScript);
+    $("#makeReview").addEventListener("click", generateReview);
+    $("#runAll").addEventListener("click", runAll);
+    $("#copyCurrent").addEventListener("click", () => copyText(currentViewText()));
+    $("#downloadMd").addEventListener("click", () => downloadFile("knowledge-live-plan.md", buildMarkdown(), "text/markdown;charset=utf-8"));
+    $("#downloadJson").addEventListener("click", () => downloadFile("knowledge-live-plan.json", buildJson(), "application/json;charset=utf-8"));
+    $("#copyAll").addEventListener("click", () => copyText(buildMarkdown()));
+    $("#downloadAll").addEventListener("click", () => downloadFile("knowledge-live-plan.md", buildMarkdown(), "text/markdown;charset=utf-8"));
+    $("#aiModalClose").addEventListener("click", () => $("#aiModal").classList.remove("show"));
+
+    window.addEventListener("DOMContentLoaded", () => {
+      restoreDraft();
+      updateBadges();
+      checkAIHealth();
+      refreshIcons();
+    });
+  </script>
+</body>
+</html>

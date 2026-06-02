@@ -1,0 +1,13 @@
+.DS_Store
+node_modules/
+npm-debug.log*
+
+# Local secrets. Never commit the MiniMax key.
+.env
+.env.*
+!.env.example
+!work/minimax_live_server/.env.example
+work/minimax_live_server/.env
+
+# Local runtime artifacts
+*.log

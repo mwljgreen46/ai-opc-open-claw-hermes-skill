@@ -1,0 +1,9 @@
+{
+  "name": "knowledge-live-skill",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node work/minimax_live_server/server.mjs"
+  }
+}
