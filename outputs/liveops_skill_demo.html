@@ -859,6 +859,8 @@
 
     const app = {
       aiReady: false,
+      aiConfigured: false,
+      aiChecked: false,
       selectedHotspotIndex: 0,
       promptIndex: 0,
       promptSize: 32,
@@ -919,7 +921,8 @@
 
     function setBusy(isBusy, message = "MiniMax 生成中") {
       if (isBusy) setAIStatus(message, "orange");
-      else setAIStatus(app.aiReady ? "MiniMax 已连接" : "本地规则模式", app.aiReady ? "green" : "orange");
+      else if (app.aiReady) setAIStatus("MiniMax 已连接", "green");
+      else setAIStatus(app.aiConfigured ? "MiniMax 暂不可用" : "本地规则模式", "orange");
     }
 
     function aiWaitCopy(mode, timeoutMs) {
@@ -969,16 +972,23 @@
       try {
         const response = await fetch("/api/health", { cache: "no-store" });
         const payload = await response.json();
-        app.aiReady = Boolean(payload.configured);
-        setAIStatus(app.aiReady ? "MiniMax 已连接" : "MiniMax 未配置", app.aiReady ? "green" : "orange");
+        app.aiConfigured = Boolean(payload.configured);
+        app.aiReady = app.aiConfigured;
+        setAIStatus(app.aiReady ? "MiniMax 已连接" : "本地规则模式", app.aiReady ? "green" : "orange");
       } catch {
+        app.aiConfigured = false;
         app.aiReady = false;
         setAIStatus("本地规则模式", "orange");
+      } finally {
+        app.aiChecked = true;
       }
     }
 
     async function requestAI(mode, retries = 1, timeoutMs = 45000) {
       let lastError;
+      if (app.aiChecked && !app.aiConfigured) {
+        throw new Error("MiniMax proxy is not configured");
+      }
       showAIModal(mode, timeoutMs);
       for (let attempt = 0; attempt <= retries; attempt += 1) {
         const controller = new AbortController();
@@ -1001,6 +1011,7 @@
           });
           const payload = await response.json();
           if (!response.ok || !payload.ok) throw new Error(payload.error || "MiniMax 调用失败");
+          app.aiConfigured = true;
           app.aiReady = true;
           hideAIModal();
           return payload.result || {};
@@ -1031,6 +1042,9 @@
           if ($(`#${id}`)) $(`#${id}`).value = value;
         });
         Object.assign(app, saved.app || {});
+        app.aiReady = false;
+        app.aiConfigured = false;
+        app.aiChecked = false;
         app.aiPendingCount = 0;
         app.hotspotRequestId = 0;
         app.scriptRequestId = 0;
