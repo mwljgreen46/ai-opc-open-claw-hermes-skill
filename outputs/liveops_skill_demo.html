@@ -856,6 +856,7 @@
       "hostStyle", "depth", "topicSeed", "materials", "boundaries", "interactionPlan",
       "transcript", "viewers", "avgStay", "comments", "follows"
     ];
+    const isStaticPages = location.hostname.endsWith("github.io");
 
     const app = {
       aiReady: false,
@@ -922,7 +923,7 @@
     function setBusy(isBusy, message = "MiniMax 生成中") {
       if (isBusy) setAIStatus(message, "orange");
       else if (app.aiReady) setAIStatus("MiniMax 已连接", "green");
-      else setAIStatus(app.aiConfigured ? "MiniMax 暂不可用" : "本地规则模式", "orange");
+      else setAIStatus(app.aiConfigured ? "MiniMax 暂不可用" : (isStaticPages ? "静态演示模式" : "本地规则模式"), "orange");
     }
 
     function aiWaitCopy(mode, timeoutMs) {
@@ -969,6 +970,13 @@
     }
 
     async function checkAIHealth() {
+      if (isStaticPages) {
+        app.aiConfigured = false;
+        app.aiReady = false;
+        app.aiChecked = true;
+        setAIStatus("静态演示模式", "orange");
+        return;
+      }
       try {
         const response = await fetch("/api/health", { cache: "no-store" });
         const payload = await response.json();
@@ -978,7 +986,7 @@
       } catch {
         app.aiConfigured = false;
         app.aiReady = false;
-        setAIStatus("本地规则模式", "orange");
+        setAIStatus(isStaticPages ? "静态演示模式" : "本地规则模式", "orange");
       } finally {
         app.aiChecked = true;
       }
@@ -1179,7 +1187,7 @@
         if (requestId !== app.hotspotRequestId) return;
         console.warn(error);
         app.aiReady = false;
-        showToast("MiniMax 暂不可用，保留基础热点");
+        showToast(app.aiConfigured ? "MiniMax 暂不可用，保留基础热点" : "静态演示模式，保留基础热点");
       } finally {
         setBusy(false);
       }
@@ -1300,7 +1308,7 @@
         if (requestId !== app.scriptRequestId) return;
         console.warn(error);
         app.aiReady = false;
-        showToast("MiniMax 暂不可用，保留基础直播稿");
+        showToast(app.aiConfigured ? "MiniMax 暂不可用，保留基础直播稿" : "静态演示模式，保留基础直播稿");
       } finally {
         setBusy(false);
       }
