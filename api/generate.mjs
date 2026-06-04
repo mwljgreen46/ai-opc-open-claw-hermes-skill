@@ -1,98 +1,44 @@
-import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
-import { existsSync, readFileSync } from "node:fs";
-import { extname, join, normalize, resolve } from "node:path";
-
-const workspaceRoot = resolve(process.cwd());
-const outputDir = resolve(workspaceRoot, "outputs");
-const envPath = resolve(workspaceRoot, "work/minimax_live_server/.env");
-const port = Number(process.env.PORT || 8765);
-
-loadEnvFile(envPath);
-
-const config = {
-  apiKey: process.env.MINIMAX_API_KEY || "",
-  baseUrls: splitList(process.env.MINIMAX_BASE_URLS || process.env.MINIMAX_BASE_URL || "https://api.minimaxi.com/v1,https://api.minimax.io/v1,https://api.minimax.chat/v1"),
-  models: splitList(process.env.MINIMAX_MODELS || process.env.MINIMAX_MODEL || "MiniMax-M2.7,MiniMax-M2.5,MiniMax-M2"),
-  timeoutMs: Number(process.env.MINIMAX_TIMEOUT_MS || 45000)
+export const config = {
+  maxDuration: 60
 };
 
-const mimeTypes = {
-  ".html": "text/html; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8",
-  ".css": "text/css; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".svg": "image/svg+xml",
-  ".md": "text/markdown; charset=utf-8"
-};
+export default async function handler(req, res) {
+  res.setHeader("Cache-Control", "no-store");
 
-const server = createServer(async (req, res) => {
+  if (req.method !== "POST") {
+    return res.status(405).json({ ok: false, error: "Method not allowed" });
+  }
+
   try {
-    const url = new URL(req.url || "/", `http://${req.headers.host || "127.0.0.1"}`);
-
-    if (url.pathname === "/api/health") {
-      return json(res, 200, {
-        ok: true,
-        provider: "MiniMax",
-        configured: Boolean(config.apiKey),
-        baseUrls: config.baseUrls.map(maskUrl),
-        models: config.models
-      });
-    }
-
-    if (url.pathname === "/api/generate" && req.method === "POST") {
-      const body = await readJsonBody(req);
-      const result = await generateWithMiniMax(body);
-      return json(res, 200, { ok: true, result });
-    }
-
-    if (url.pathname.startsWith("/api/")) {
-      return json(res, 404, { ok: false, error: "API route not found" });
-    }
-
-    return serveStatic(url.pathname, res);
+    const body = await readRequestJson(req);
+    const result = await generateWithMiniMax(body);
+    return res.status(200).json({ ok: true, result });
   } catch (error) {
     const status = error.statusCode || 500;
-    return json(res, status, {
+    return res.status(status).json({
       ok: false,
       error: sanitizeError(error.message || "Server error")
     });
   }
-});
-
-server.listen(port, "127.0.0.1", () => {
-  console.log(`内容直播参谋已启动: http://127.0.0.1:${port}/liveops_skill_demo.html`);
-  console.log(`MiniMax: ${config.apiKey ? "已读取本地密钥" : "未配置 MINIMAX_API_KEY"}`);
-});
-
-async function serveStatic(pathname, res) {
-  const requested = pathname === "/" ? "/liveops_skill_demo.html" : pathname;
-  const decoded = decodeURIComponent(requested);
-  const normalized = normalize(decoded).replace(/^(\.\.[/\\])+/, "");
-  const filePath = resolve(join(outputDir, normalized));
-
-  if (!filePath.startsWith(outputDir)) {
-    return json(res, 403, { ok: false, error: "Forbidden" });
-  }
-
-  if (!existsSync(filePath)) {
-    return json(res, 404, { ok: false, error: "File not found" });
-  }
-
-  const content = await readFile(filePath);
-  const type = mimeTypes[extname(filePath).toLowerCase()] || "application/octet-stream";
-  res.writeHead(200, {
-    "Content-Type": type,
-    "Cache-Control": "no-store"
-  });
-  res.end(content);
 }
 
+const configValue = {
+  get apiKey() {
+    return process.env.MINIMAX_API_KEY || "";
+  },
+  get baseUrls() {
+    return splitList(process.env.MINIMAX_BASE_URLS || process.env.MINIMAX_BASE_URL || "https://api.minimaxi.com/v1,https://api.minimax.io/v1,https://api.minimax.chat/v1");
+  },
+  get models() {
+    return splitList(process.env.MINIMAX_MODELS || process.env.MINIMAX_MODEL || "MiniMax-M2.7,MiniMax-M2.5,MiniMax-M2");
+  },
+  get timeoutMs() {
+    return Number(process.env.MINIMAX_TIMEOUT_MS || 45000);
+  }
+};
+
 async function generateWithMiniMax(body) {
-  if (!config.apiKey) {
+  if (!configValue.apiKey) {
     const error = new Error("MiniMax API key is not configured");
     error.statusCode = 500;
     throw error;
@@ -122,8 +68,8 @@ async function generateWithMiniMax(body) {
   ];
 
   let lastError;
-  for (const baseUrl of config.baseUrls) {
-    for (const model of config.models) {
+  for (const baseUrl of configValue.baseUrls) {
+    for (const model of configValue.models) {
       try {
         const content = await callChatCompletions(baseUrl, model, messages);
         return parseModelJson(content);
@@ -139,12 +85,12 @@ async function generateWithMiniMax(body) {
 
 async function callChatCompletions(baseUrl, model, messages) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), config.timeoutMs);
+  const timer = setTimeout(() => controller.abort(), configValue.timeoutMs);
   try {
     const response = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${config.apiKey}`,
+        "Authorization": `Bearer ${configValue.apiKey}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
@@ -339,7 +285,10 @@ function extractFirstJsonObject(text) {
   return "";
 }
 
-async function readJsonBody(req) {
+async function readRequestJson(req) {
+  if (req.body && typeof req.body === "object") return req.body;
+  if (typeof req.body === "string") return JSON.parse(req.body || "{}");
+
   let body = "";
   for await (const chunk of req) {
     body += chunk;
@@ -352,32 +301,6 @@ async function readJsonBody(req) {
   return body ? JSON.parse(body) : {};
 }
 
-function json(res, status, payload) {
-  res.writeHead(status, {
-    "Content-Type": "application/json; charset=utf-8",
-    "Cache-Control": "no-store"
-  });
-  res.end(JSON.stringify(payload));
-}
-
-function loadEnvFile(filePath) {
-  if (!existsSync(filePath)) return;
-  const content = readFileSyncText(filePath);
-  for (const line of content.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const index = trimmed.indexOf("=");
-    if (index <= 0) continue;
-    const key = trimmed.slice(0, index).trim();
-    const value = trimmed.slice(index + 1).trim().replace(/^["']|["']$/g, "");
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
-
-function readFileSyncText(filePath) {
-  return existsSync(filePath) ? String(readFileSync(filePath, "utf8")) : "";
-}
-
 function splitList(value) {
   return String(value || "")
     .split(",")
@@ -386,7 +309,7 @@ function splitList(value) {
 }
 
 function sanitizeError(value) {
-  const key = config?.apiKey;
+  const key = configValue.apiKey;
   let text = String(value || "");
   if (key) text = text.replaceAll(key, "[redacted]");
   return text.replace(/sk-[A-Za-z0-9_-]+/g, "[redacted]");
@@ -394,13 +317,4 @@ function sanitizeError(value) {
 
 function shouldTryNext(error) {
   return [400, 401, 403, 404, 422, 429, 500, 502, 503, 504].includes(error.apiStatus) || error.statusCode === 502 || error.name === "AbortError";
-}
-
-function maskUrl(value) {
-  try {
-    const url = new URL(value);
-    return `${url.protocol}//${url.host}`;
-  } catch {
-    return value;
-  }
 }

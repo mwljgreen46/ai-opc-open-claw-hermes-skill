@@ -1,6 +1,7 @@
 .DS_Store
 node_modules/
 npm-debug.log*
+.vercel/
 
 # Local secrets. Never commit the MiniMax key.
 .env
@@ -11,3 +12,6 @@ work/minimax_live_server/.env
 
 # Local runtime artifacts
 *.log
+work/minimax_live_server/*.log
+work/launch_agents/
+.vercel

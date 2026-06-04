@@ -1,0 +1,10 @@
+.git
+.vercel
+.DS_Store
+node_modules
+
+.env
+.env.*
+work/minimax_live_server/.env
+work/minimax_live_server/*.log
+work/launch_agents/
