@@ -280,8 +280,9 @@ function buildPrompt(mode, input, state) {
     "2. 不要直播带货话术，不要价格促销，不要成交转化。",
     "3. 主题优先级是 selectedHotspot > selectedTopic > input.topicSeed。只有用户填写 input.topicSeed 且没有选择热点时，它才是硬约束。",
     "4. 历史和军事史内容必须强调公开资料、史料不确定性和现实边界。",
-    "5. 字符串内部不要使用英文双引号；如需引用，请使用中文引号“”。",
-    "6. 语言要能直接给主播使用，具体、清楚、有节目感。",
+    "5. 必须是严格 JSON：所有键名必须用英文双引号包裹，所有字符串值必须用英文双引号包裹，不要末尾逗号。",
+    "6. 字符串内容里如需引用，请使用中文引号“”，不要在字符串内部使用未转义的英文双引号。",
+    "7. 语言要能直接给主播使用，具体、清楚、有节目感。",
     "",
     `输入数据：${JSON.stringify(compact, null, 2)}`
   ].join("\n");
@@ -299,12 +300,33 @@ function parseModelJson(content) {
   } catch {
     const extracted = extractFirstJsonObject(cleaned);
     if (extracted) {
-      return JSON.parse(extracted);
+      return parseJsonCandidate(extracted);
     }
+    return parseJsonCandidate(cleaned);
+  }
+}
+
+function parseJsonCandidate(candidate) {
+  const attempts = [
+    candidate,
+    repairLooseJson(candidate)
+  ];
+  for (const attempt of attempts) {
+    try {
+      return JSON.parse(attempt);
+    } catch {
+      // Try the next repair strategy.
+    }
+  }
     const error = new Error("MiniMax did not return valid JSON");
     error.statusCode = 502;
     throw error;
-  }
+}
+
+function repairLooseJson(value) {
+  return String(value || "")
+    .replace(/,\s*([}\]])/g, "$1")
+    .replace(/([{,]\s*)([A-Za-z_][A-Za-z0-9_-]*)(\s*:)/g, '$1"$2"$3');
 }
 
 function extractFirstJsonObject(text) {
